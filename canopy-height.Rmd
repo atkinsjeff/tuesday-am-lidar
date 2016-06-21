@@ -1,0 +1,111 @@
+---
+title: "classify-raster-data"
+author: "Jeff Atkins"
+date: "June 21, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+* library() provides an error message.
+* require() returns a true/false based upon whether it is installed. 
+
+```{r import-libraries}
+library(raster)
+library(rgdal)
+```
+
+##Import canopy heigh model (CHM)
+```{r import-canopy-height}
+
+chm <- raster("../NEONdata/D17-California/TEAK/2013/lidar/TEAK_lidarCHM.tif")
+plot(chm,
+     main = "this plot uses raster package")
+
+image(chm, 
+      main = "this uses image")
+```
+
+```{r assign-values-na}
+hist(chm,
+     main = "Before removing 0s")
+chm[chm == 0] <- NA
+
+hist(chm,
+     main = "Just trees!")
+
+```
+
+
+
+```{r import-aspect-data}
+
+aspect <- raster("../NEONdata/D17-California/TEAK/2013/lidar/TEAK_lidarAspect.tif")
+
+plot(aspect, 
+     main = "Teakettle Aspect Data")
+
+```
+
+```{r class-matrix}
+#create matrix
+class.m <- c(0, 45, 1,
+             45, 135, NA,
+             135, 225, 2,
+             225, 315, NA,
+             315, 360, 1)
+
+#this is telling R how to build the matrix and reshape it.
+reclass.m <- matrix(class.m, 
+              ncol = 3,
+              byrow = TRUE)
+
+asp.ns <- reclassify(aspect, reclass.m)
+
+plot(asp.ns,
+     main = "North and South Facing Slopes")
+
+````
+
+```{r export-tiff, eval=FALSE}
+
+writeRaster(asp.ns,
+            file = "../outputs/TEAK/Teak_nsAspect2.tif",
+            options = "COMPRESS=LZW", 
+            overwrite = FALSE,
+            NAflag = -9999)
+```
+
+
+
+```{r raster-mask}
+asp.ns
+
+ndvi <- raster("../NEONdata/D17-California/TEAK/2013/spectrometer/veg_index/TEAK_NDVI.tif")
+hist(ndvi)
+plot( ndvi, 
+      main = "NDVI for Teakettle Field Site")
+
+#mask data
+
+nFacing.NDVI <- mask(ndvi, asp.ns)
+
+plot(nFacing.NDVI,
+     main = "NDVI on the North Facing Slopes")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
